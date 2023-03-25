@@ -75,6 +75,8 @@ def load_darcy_pt(data_path,
     x_train = data['x'][0:n_train, :, :].unsqueeze(channel_dim).type(torch.float32).clone()
     y_train = data['y'][0:n_train, :, :].unsqueeze(channel_dim).clone()
     del data
+    print(x_train.shape)
+    print(y_train.shape)
 
     idx = test_resolutions.index(train_resolution)
     test_resolutions.pop(idx)

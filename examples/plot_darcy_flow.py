@@ -18,10 +18,7 @@ from neuralop.datasets import load_darcy_flow_small
 # Training samples are 16x16 and we load testing samples at both 
 # 16x16 and 32x32 (to test resolution invariance).
 
-train_loader, test_loaders, output_encoder = load_darcy_flow_small(
-        n_train=100, batch_size=4, 
-        test_resolutions=[16, 32], n_tests=[50, 50], test_batch_sizes=[4, 2],
-        )
+train_loader, test_loaders, output_encoder = load_darcy_flow_small(n_train=100, batch_size=4, test_resolutions=[16, 32], n_tests=[50, 50], test_batch_sizes=[4, 2])
 
 train_dataset = train_loader.dataset
 

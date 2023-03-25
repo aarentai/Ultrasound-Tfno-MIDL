@@ -42,6 +42,9 @@ var/
 .installed.cfg
 *.egg
 .pytest_cache/
+__pycache__/
+.ipynb_checkpoints/
+Models*/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

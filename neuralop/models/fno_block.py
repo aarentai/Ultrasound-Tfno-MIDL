@@ -270,6 +270,7 @@ class FactorizedSpectralConv(nn.Module):
         
         #Compute Fourier coeffcients 
         fft_dims = list(range(-self.order, 0))
+#         The FFT of a real signal is Hermitian-symmetric, X[i_1, ..., i_n] = conj(X[-i_1, ..., -i_n]) so the full fftn() output contains redundant information. rfftn() instead omits the negative frequencies in the last dimension.
         x = torch.fft.rfftn(x.float(), norm=self.fft_norm, dim=fft_dims)
 
         out_fft = torch.zeros([batchsize, self.out_channels, *fft_size], device=x.device, dtype=torch.cfloat)

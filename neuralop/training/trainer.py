@@ -217,7 +217,7 @@ class Trainer:
                 x, y = self.patcher.patch(x, y)
                 y = y.to(self.device)
                 x = x.to(self.device)
-                
+                print(x.shape)
                 out = model(x)
         
                 out, y = self.patcher.unpatch(out, y, evaluation=True)
