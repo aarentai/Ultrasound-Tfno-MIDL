@@ -65,7 +65,7 @@ class UnitGaussianNormalizer:
 
 def count_params(model):
     """Returns the number of parameters of a PyTorch model"""
-    return sum([p.numel()*2 if p.is_complex() else p.numel() for p in model.parameters()])
+    return sum([p.numel()*2 if p.is_complex() else p.numel() for p in model.parameters() if p.requires_grad])
 
 
 def wandb_login(api_key_file='../config/wandb_api_key.txt'):
