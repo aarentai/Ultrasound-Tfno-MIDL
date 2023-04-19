@@ -9,7 +9,22 @@ from skimage import data
 from scipy.ndimage import zoom
 from scipy import ndimage, datasets
 
-def A_laplace(x, h=1, bc='dirichlet'):
+
+def get_framework(arr):
+  # return np or torch depending on type of array
+  # also returns framework name as "numpy" or "torch"
+  fw = None
+  fw_name = ''
+  if type(arr) == np.ndarray:
+    fw = np
+    fw_name = 'numpy'
+  else:
+    fw = torch
+    fw_name = 'torch'
+  return (fw, fw_name)
+
+def A_laplace(x, h=1, bc='dirichlet'):    
+    fw, fw_name = get_framework(x)
     dim = len(x.shape)
     if dim not in [2, 3]:
         raise Exception("Dimension of the field should be either 2 or 3.")
@@ -58,7 +73,8 @@ def AA_laplace(x, h=1, bc='dirichlet'):
     return AAx
 
 '''Refering to matlab pcg'''
-def laplace_cgsolver_psd(Ab, h, iteration, bc='dirichlet'):
+def laplace_cgsolver_psd(Ab, h, iteration, bc='dirichlet'):   
+    fw, fw_name = get_framework(Ab)
     residual_norm_list = []
     x = np.zeros_like(Ab)
     r = Ab - AA_laplace(x, h, bc)
@@ -78,7 +94,8 @@ def laplace_cgsolver_psd(Ab, h, iteration, bc='dirichlet'):
         residual_norm_list.append(np.linalg.norm(r))
     return x, residual_norm_list
 
-def A_helmholtz(x, k, h=1, bc='dirichlet'):
+def A_helmholtz(x, k, h=1, bc='dirichlet'):   
+    fw, fw_name = get_framework(x)
     Lx = A_laplace(x, h, bc)
     Ax = -(Lx+np.multiply(k, x))
     return Ax
@@ -89,7 +106,8 @@ def AA_helmholtz(x, k, h=1, bc='dirichlet'):
     return AAx
 
 '''Refering to matlab pcg'''
-def helmholtz_cgsolver_psd(Ab, k, h, iteration, bc='dirichlet'):
+def helmholtz_cgsolver_psd(Ab, k, h, iteration, bc='dirichlet'):   
+    fw, fw_name = get_framework(Ab)
     residual_norm_list = []
     x = np.zeros_like(Ab)
     r = Ab - AA_helmholtz(x, k, h, bc)
@@ -109,7 +127,8 @@ def helmholtz_cgsolver_psd(Ab, k, h, iteration, bc='dirichlet'):
         residual_norm_list.append(np.linalg.norm(r))
     return x, residual_norm_list
 
-def helmholtz_ftsolver(b, k, h=1):
+def helmholtz_ftsolver(b, k, h=1):   
+    fw, fw_name = get_framework(b)
     '''fourier transform assuming periodic boundary condition'''
     v, w = np.meshgrid(np.linspace(0, 1, b.shape[0], endpoint=False), 
                        np.linspace(0, 1, b.shape[1], endpoint=False), 
@@ -119,7 +138,8 @@ def helmholtz_ftsolver(b, k, h=1):
     x = np.fft.ifftn(np.multiply(B, 1./L)).real
     return x
 
-def A_westervelt(x, k, a, h=1, bc='dirichlet'):
+def A_westervelt(x, k, a, h=1, bc='dirichlet'):   
+    fw, fw_name = get_framework(x)
     Lx = A_laplace(x, h, bc)
 #     remember k and delta are the coefficient of x, not constant
     Ax = -(Lx+np.multiply(k+a*1j,x))
@@ -132,7 +152,8 @@ def AA_westervelt(x, k, a, h=1, bc='dirichlet'):
     return AAx
 
 '''Refering to matlab pcg'''
-def westervelt_cgsolver_psd(Ab, k, a, h, iteration, bc='dirichlet'):
+def westervelt_cgsolver_psd(Ab, k, a, h, iteration, bc='dirichlet'):   
+    fw, fw_name = get_framework(Ab)
     residual_norm_list = []
     x = np.zeros_like(Ab)
     r = Ab - AA_westervelt(x, k, a, h, bc)
@@ -153,7 +174,8 @@ def westervelt_cgsolver_psd(Ab, k, a, h, iteration, bc='dirichlet'):
     return x, residual_norm_list
 
 '''my version'''
-def helmholtz_cgsolver_psd_fd(Ab, k, h, iteration, bc='dirichlet'):
+def helmholtz_cgsolver_psd_fd(Ab, k, h, iteration, bc='dirichlet'):   
+    fw, fw_name = get_framework(Ab)
     '''initialize pressure'''
     x = np.zeros_like(Ab)
 #     b = A_helmholtz(b, k, h, bc)
