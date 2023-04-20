@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate
-import pdb, time
+import pdb, time, math, torch
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 from tqdm import tqdm
@@ -29,7 +29,10 @@ def A_laplace(x, h=1, bc='dirichlet'):
     if dim not in [2, 3]:
         raise Exception("Dimension of the field should be either 2 or 3.")
 #     don't forget to new the matrix as complex_ type, or it will raise "ComplexWarning: Casting complex values to real discards the imaginary part"
-    x_ext = np.zeros([c+2 for c in x.shape], dtype = 'complex_')
+    if fw_name=='numpy':
+        x_ext = fw.zeros(tuple([c+2 for c in x.shape]), dtype='complex_')
+    else:
+        x_ext = fw.zeros(tuple([c+2 for c in x.shape]), dtype=torch.cfloat)
     
     if dim==2:
         x_ext[1:-1,1:-1] = x
@@ -43,7 +46,7 @@ def A_laplace(x, h=1, bc='dirichlet'):
             x_ext[0,1:-1] = x[-1,:]
             x_ext[1:-1,-1] = x[:,0]
             x_ext[1:-1,0] = x[:,-1]
-        Lx_ext = (np.roll(x_ext, -1, axis=0)+np.roll(x_ext, 1, axis=0)+np.roll(x_ext, -1, axis=1)+np.roll(x_ext, 1, axis=1)-4*x_ext)/h**2
+        Lx_ext = (fw.roll(x_ext, -1, 0)+fw.roll(x_ext, 1, 0)+fw.roll(x_ext, -1, 1)+fw.roll(x_ext, 1, 1)-4*x_ext)/h**2
         Lx = Lx_ext[1:-1,1:-1]
         
     if dim==3:
@@ -62,7 +65,7 @@ def A_laplace(x, h=1, bc='dirichlet'):
             x_ext[1:-1,0,1:-1] = x[:,-1,:]
             x_ext[1:-1,1:-1,-1] = x[:,:,0]
             x_ext[1:-1,1:-1,0] = x[:,:,-1]            
-        Lx_ext = (np.roll(x_ext, -1, axis=0)+np.roll(x_ext, 1, axis=0)+np.roll(x_ext, -1, axis=1)+np.roll(x_ext, 1, axis=1)+np.roll(x_ext, -1, axis=2)+np.roll(x_ext, 1, axis=2)-6*x_ext)/h**2
+        Lx_ext = (fw.roll(x_ext, -1, 0)+fw.roll(x_ext, 1, 0)+fw.roll(x_ext, -1, 1)+fw.roll(x_ext, 1, 1)+fw.roll(x_ext, -1, 2)+fw.roll(x_ext, 1, 2)-6*x_ext)/h**2
         Lx = Lx_ext[1:-1,1:-1,1:-1]
         
     return Lx
@@ -76,28 +79,31 @@ def AA_laplace(x, h=1, bc='dirichlet'):
 def laplace_cgsolver_psd(Ab, h, iteration, bc='dirichlet'):   
     fw, fw_name = get_framework(Ab)
     residual_norm_list = []
-    x = np.zeros_like(Ab)
+    x = fw.zeros_like(Ab)
     r = Ab - AA_laplace(x, h, bc)
     rho = 1
     for i in range(iteration):
         rho1 = rho
-        rho = np.sum(r**2)
+        rho = fw.sum(r**2)
         if i==0: 
-            p = np.copy(r)
+            if fw_name=='numpy':
+                p = np.copy(r)
+            else:
+                p = torch.clone(r)
         else:
             beta = rho/rho1
             p = r+beta*p
         Ap = AA_laplace(p, h, bc)
-        alpha = rho/np.sum(p*Ap)
+        alpha = rho/fw.sum(p*Ap)
         x = x+alpha*p
         r = r-alpha*Ap
-        residual_norm_list.append(np.linalg.norm(r))
+        residual_norm_list.append(fw.linalg.norm(r).item())
     return x, residual_norm_list
 
 def A_helmholtz(x, k, h=1, bc='dirichlet'):   
     fw, fw_name = get_framework(x)
     Lx = A_laplace(x, h, bc)
-    Ax = -(Lx+np.multiply(k, x))
+    Ax = -(Lx+fw.multiply(k, x))
     return Ax
 
 def AA_helmholtz(x, k, h=1, bc='dirichlet'):
@@ -109,40 +115,68 @@ def AA_helmholtz(x, k, h=1, bc='dirichlet'):
 def helmholtz_cgsolver_psd(Ab, k, h, iteration, bc='dirichlet'):   
     fw, fw_name = get_framework(Ab)
     residual_norm_list = []
-    x = np.zeros_like(Ab)
+    x = fw.zeros_like(Ab)
     r = Ab - AA_helmholtz(x, k, h, bc)
     rho = 1
     for i in range(iteration):
         rho1 = rho
-        rho = np.sum(r**2)
+        rho = fw.sum(r**2)
         if i==0: 
-            p = np.copy(r)
+            if fw_name=='numpy':
+                p = np.copy(r)
+            else:
+                p = torch.clone(r)
         else:
             beta = rho/rho1
             p = r+beta*p
         Ap = AA_helmholtz(p, k, h, bc)
-        alpha = rho/np.sum(p*Ap)
+        alpha = rho/fw.sum(p*Ap)
         x = x+alpha*p
         r = r-alpha*Ap
-        residual_norm_list.append(np.linalg.norm(r))
+        residual_norm_list.append(fw.linalg.norm(r).item())
+    return x, residual_norm_list
+
+'''my version, which is exactly the same as the matlab version'''
+def helmholtz_cgsolver_psd_fd(Ab, k, h, iteration, bc='dirichlet'):   
+    fw, fw_name = get_framework(Ab)
+    residual_norm_list = []
+    '''initialize pressure'''
+    x = fw.zeros_like(Ab)
+    '''get residual'''
+    r = Ab - AA_helmholtz(x, k, h, bc)
+    '''initial search direction'''
+    if fw_name=='numpy':
+        p = np.copy(r)
+    else:
+        p = torch.clone(r)
+#         previously, the i in the for loop was typoed as k, which leads to the error
+    for i in range(iteration):
+        Ap = AA_helmholtz(p, k, h, bc)
+        alpha = fw.sum(r**2)/fw.sum(p*Ap)
+        x = x + alpha*p
+        r_new = r - alpha*Ap
+        beta = fw.sum(r_new**2)/fw.sum(r**2)
+        p = r_new + beta*p
+        r = r_new
+        residual_norm_list.append(fw.linalg.norm(r).item())
     return x, residual_norm_list
 
 def helmholtz_ftsolver(b, k, h=1):   
     fw, fw_name = get_framework(b)
     '''fourier transform assuming periodic boundary condition'''
-    v, w = np.meshgrid(np.linspace(0, 1, b.shape[0], endpoint=False), 
-                       np.linspace(0, 1, b.shape[1], endpoint=False), 
+    v, w = fw.meshgrid(fw.linspace(0, 1, b.shape[0], endpoint=False), 
+                       fw.linspace(0, 1, b.shape[1], endpoint=False), 
                        indexing='ij')
-    L = (2*np.cos(2*np.pi*v)+2*np.cos(2*np.pi*w)-4)/h**2+k
-    B = np.fft.fftn(b)
-    x = np.fft.ifftn(np.multiply(B, 1./L)).real
+    L = (2*fw.cos(2*math.pi*v)+2*fw.cos(2*math.pi*w)-4)/h**2+k
+    B = fw.fft.fftn(b)
+    x = fw.fft.ifftn(fw.multiply(B, 1./L)).real
     return x
 
 def A_westervelt(x, k, a, h=1, bc='dirichlet'):   
     fw, fw_name = get_framework(x)
     Lx = A_laplace(x, h, bc)
 #     remember k and delta are the coefficient of x, not constant
-    Ax = -(Lx+np.multiply(k+a*1j,x))
+    Ax = -(Lx+fw.multiply(k+a*1j,x))
     return Ax
 
 def AA_westervelt(x, k, a, h=1, bc='dirichlet'):
@@ -155,42 +189,26 @@ def AA_westervelt(x, k, a, h=1, bc='dirichlet'):
 def westervelt_cgsolver_psd(Ab, k, a, h, iteration, bc='dirichlet'):   
     fw, fw_name = get_framework(Ab)
     residual_norm_list = []
-    x = np.zeros_like(Ab)
+    x = fw.zeros_like(Ab)
     r = Ab - AA_westervelt(x, k, a, h, bc)
     rho = 1
     for i in range(iteration):
         rho1 = rho
-        rho = np.sum(r**2)
+        rho = fw.sum(r**2)
         if i==0: 
-            p = np.copy(r)
+            if fw_name=='numpy':
+                p = np.copy(r)
+            else:
+                p = torch.clone(r)
         else:
             beta = rho/rho1
             p = r+beta*p
         Ap = AA_westervelt(p, k, a, h, bc)
-        alpha = rho/np.sum(p*Ap)
+        alpha = rho/fw.sum(p*Ap)
         x = x+alpha*p
         r = r-alpha*Ap
-        residual_norm_list.append(np.linalg.norm(r))
+        residual_norm_list.append(fw.linalg.norm(r).item())
     return x, residual_norm_list
-
-'''my version'''
-def helmholtz_cgsolver_psd_fd(Ab, k, h, iteration, bc='dirichlet'):   
-    fw, fw_name = get_framework(Ab)
-    '''initialize pressure'''
-    x = np.zeros_like(Ab)
-#     b = A_helmholtz(b, k, h, bc)
-    '''get residual'''
-    r = Ab - AA_helmholtz(x, k, h, bc)
-    '''initial search direction'''
-    p = np.copy(r)
-    for k in range(iteration):
-        alpha = np.sum(r**2)/np.sum(p*AA_helmholtz(p, k, h, bc))
-        x = x + alpha*p
-        r_new = r - alpha*AA_helmholtz(p, k, h, bc)
-        beta = np.sum(r_new**2)/np.sum(r**2)
-        p = r_new + beta*p
-        r = r_new
-    return x
 
 def fftIndgen(n):
     a = list(range(0, int(n/2+1)))
