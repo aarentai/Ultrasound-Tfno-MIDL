@@ -1,11 +1,10 @@
 # Neural Operator Learning for Ultrasound Tomography Inversion
-### [Paper](https://arxiv.org/pdf/2304.03297.pdf)
-PyTorch implementation of estimating a Riemannian manifold accommodating brain connectome faithfully.<br><br>
- :desert: [Haocheng Dai*](https://users.cs.utah.edu/~haocheng/),
- :desert: [Michael Penwarden*](https://sites.google.com/view/michaelpenwarden),
- :desert: [Mike Kirby](https://users.cs.utah.edu/~kirby/),
- :desert: [Sarang Joshi](https://scholar.google.com/citations?user=GyqdQTEAAAAJ&hl=en) <br>
- :desert:University of Utah
+### [Paper](https://arxiv.org/pdf/2304.03297.pdf) | [Poster](https://users.cs.utah.edu/~haocheng/slides/midl2023.pdf)
+PyTorch implementation of estimating speed of sound field from time-of-flight data faithfully.<br><br>
+[Haocheng Dai*](https://users.cs.utah.edu/~haocheng/),
+[Michael Penwarden*](https://sites.google.com/view/michaelpenwarden),
+[Mike Kirby](https://users.cs.utah.edu/~kirby/),
+[Sarang Joshi](https://scholar.google.com/citations?user=GyqdQTEAAAAJ&hl=en) (\*equal contribution)<br>
  <br>
 Medical Imaging with Deep Learning (MIDL), 2023, Short Paper Track :tent:
 
