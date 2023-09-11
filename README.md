@@ -97,10 +97,22 @@ Under the `Checkpoints/` folder are all experiments we conducted for the paper
 ## Data generation - Matlab k-wave simulation
 
 For those who want to generate data by themselves, we also provide the matlab simulation scripts for your convenience.
-1. Install [k-wave toolbox](http://www.k-wave.org/installation.php);
-2. Install [signal processing toolbox](https://www.mathworks.com/products/signal.html);
-3. Run `Scripts/simulation_water.m` in matlab by modifying the I/O path and parameter configuration accordingly;
-4. Run `Scripts/simulation_grf.m` by modifying the I/O path and parameter configuration accordingly, which will subtract the time of flight of the homogenous water field from the one of the GRFs.
+1. Install Matlab linux
+    - Download [Matlab linux](https://www.mathworks.com/downloads/)
+    - Run following command
+    ```
+    unzip PATH_TO_ZIP_FILE -d PATH_TO_TARGET_DIRECTORY
+    sudo mkdir /usr/local/MATLAB
+    sudo mkdir /usr/local/MATLAB/YOUR_MATLAB_VERSION
+    sudo chown YOUR_USER_NAME /usr/local/MATLAB
+    sudo chown YOUR_USER_NAME /usr/local/MATLAB/YOUR_MATLAB_VERSION
+    cd PATH_TO_TARGET_DIRECTORY
+    ./install
+    ```
+2. Install [k-wave toolbox](http://www.k-wave.org/installation.php);
+3. Install [Communications Toolbox](https://www.mathworks.com/products/communications.html?s_tid=srchtitle_site_search_3_Communications), [DSP System Toolbox](https://www.mathworks.com/products/dsp-system.html?s_tid=srchtitle_site_search_2_dsp%2520system), [Image Processing Toolbox](https://www.mathworks.com/products/image.html?s_tid=srchtitle_site_search_1_image%2520processing), [Parallel Computing Toolbox](https://www.mathworks.com/products/parallel-computing.html) [Signal Processing Toolbox](https://www.mathworks.com/products/signal.html), [Wavelet Toolbox](https://www.mathworks.com/products/wavelet.html);
+4. Run `Scripts/simulation_water.m` in matlab by modifying the I/O path and parameter configuration accordingly;
+5. Run `Scripts/simulation_grf.m` by modifying the I/O path and parameter configuration accordingly, which will subtract the time of flight of the homogenous water field from the one of the GRFs.
 
 ## Citation
 
